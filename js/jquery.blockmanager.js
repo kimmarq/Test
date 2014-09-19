@@ -1,3 +1,5 @@
+/*V1.0*/
+
 (function($){
 	$.fn.blockmanager = function(args, callback){
         var _this = this;
