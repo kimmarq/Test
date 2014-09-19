@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>slider v3.1.0</title>
+
+    <!-- Bootstrap -->
+    <link href="css/normalize.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/gridpak.css">
+    <link href="css/grid_7.css" rel="stylesheet">
+ 
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <style>
+    .formarea{
+        position: relative;
+        overflow: hidden;
+        padding:0;
+    }
+    .blokje{
+        height:100px;
+        margin:10px 0;
+    }
+    .blokje.current{
+
+    }
+    .blokje.previous{
+        background-color: #
+    }
+    .block_container{
+        position: relative;
+        height: 100%;
+        width: 100%;
+
+        transition: top 1s ease-in-out;
+    }
+    #overlay_blokje{
+        position: absolute;
+        top:100px;
+        height:100px;
+        width:100%;        
+        background-color:#CCC;
+        z-index: -1;
+    }
+    </style>
+
+</head>
+
+<body>
+<div class="container-xl">
+    <div class="page">
+
+
+        <div class="row xpage-content">
+            <div class="container"> 
+                <div class="row questiontext" style="height: 100px;">
+                    <div class="col span_12">
+                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit,</p>
+                    </div>
+                </div>
+
+                <div id="formarea" class="row formarea">
+                    <div id="overlay_blokje"></div>
+                    <div class="block_container">
+                        <!-- Previous -->
+                        <div class="col span_12 blokje">
+                            <p>1 - Lorem ipsum dolor sit amet, consectetur adipisicing elit,</p>
+                            <input type="radio"/>
+                        </div>
+                        <!-- Current -->
+                        <div class="col span_12 blokje">
+                            <p>2 - Lorem ipsum dolor sit amet, consectetur adipisicing elit,</p>
+                            <input type="radio"/>
+                        </div>
+                        <!-- Qeue -->
+                        <div class="col span_12 blokje">
+                            <p> 3 - Lorem ipsum dolor sit amet, consectetur adipisicing elit,</p>
+                            <input type="radio"/>
+                        </div>
+                         <div class="col span_12 blokje">
+                            <p> 4 - Lorem ipsum dolor sit amet, consectetur adipisicing elit,</p>
+                            <input type="radio"/>
+                        </div>
+                        <div class="col span_12 blokje">
+                            <p> 5 - Lorem ipsum dolor sit amet, consectetur adipisicing elit,</p>
+                            <input type="radio"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="application/javascript">
+    function windowInitialize(){
+
+        var $currentFormElement = $("#formarea")
+
+        var height = (window.innerHeight - $currentFormElement[0].offsetTop);
+        var textPT = $currentFormElement.css("padding-top");
+        var paddingTop = parseInt(textPT.substring(0, textPT.length - 2));
+
+        var textPB = $currentFormElement.css("padding-bottom");
+        var paddingBottom = parseInt(textPB.substring(0, textPB.length - 2));
+        
+        $currentFormElement.css("height", ((height - (paddingTop + paddingBottom)) + "px"));
+
+    }
+    window.onload = windowInitialize();
+
+    $.fn.blockmanager = function(args, callback){
+        var _this = this;
+        _this.data = {
+            blocks : [],
+            overlay_height: 100,
+            block_height: 100,
+            block_selector: ".block",
+            block_container: ".block_container",
+            currentblock : 0,
+            overlay:{}
+        };
+
+        _this.next = function(callback) {
+            if(_this.data.currentblock < (_this.data.blocks.length)) {
+                _this.goTo((_this.data.currentblock + 1), callback);
+                _this.trigger("next");
+            }
+        }
+
+        _this.previous = function(callback) {
+            if(_this.data.currentblock > 1){
+                _this.goTo((_this.data.currentblock - 1), callback);
+                _this.trigger("previous");
+            }
+        }
+
+        _this.goTo = function(n, callback) {
+            console.log("goto", n);
+            _this.data.currentblock = n;
+
+            updateBlockData(n);
+
+            if(n == 1) {
+                $(_this.data.block_container).css("top", "100px");
+            }
+            else {
+                if(n == 2)
+                    $(_this.data.block_container).css("top", "-20px");
+                else {
+                    var nextPixel = (Math.abs((n-2)*120) * -1) - 20;
+                    $(_this.data.block_container).css("top", (nextPixel +"px"));
+                }
+            }
+
+            if(callback)
+                callback(_this);
+        } 
+
+        var updateBlockData = function(n){
+            var previousIndex, currentIndex;
+            currentIndex = (n - 1);
+            previousIndex = currentIndex == 0 ? -1 : currentIndex - 1
+
+            // Loop through blocks
+            for(var i = 0; i < (_this.data.blocks.length); i++){
+                if(i == currentIndex){
+                    _this.data.blocks[i].current = false;
+                    processCSSPosition("current", $(_this.data.blocks[i].html));
+                }
+                else if(i == previousIndex){
+                    _this.data.blocks[i].current = true;
+                    processCSSPosition("previous", $(_this.data.blocks[i].html));
+                }
+                else if(i > currentIndex){
+                    _this.data.blocks[i].current = false;
+                    processCSSPosition("queue", $(_this.data.blocks[i].html));
+                }
+                else{
+                    _this.data.blocks[i].current = false;
+                    processCSSPosition("default", $(_this.data.blocks[i].html));
+                }
+            }
+        }
+
+        var processCSSPosition = function(status, $element){
+            switch(status)
+            {
+                case "previous" : {
+                    $element.addClass("previous");
+
+                    if($element.hasClass("current"))
+                        $element.removeClass("current");
+
+                    if($element.hasClass("queue"))
+                        $element.removeClass("queue");
+
+                    break;
+                }
+
+                case "current" : {
+                    $element.addClass("current");
+
+                    if($element.hasClass("previous"))
+                        $element.removeClass("previous");
+
+                    if($element.hasClass("queue"))
+                        $element.removeClass("queue");
+
+                    break;
+                }
+
+                case "queue" : {
+                    $element.addClass("queue");
+
+                    if($element.hasClass("previous"))
+                        $element.removeClass("previous");
+
+                    if($element.hasClass("current"))
+                        $element.removeClass("current");
+
+                    break;
+                }
+                default:{
+                    if($element.hasClass("queue"))
+                        $element.removeClass("queue");
+
+                    if($element.hasClass("previous"))
+                        $element.removeClass("previous");
+
+                    if($element.hasClass("current"))
+                        $element.removeClass("current");
+
+                    break;
+                }
+            }
+        }
+
+        var moveContainer = function(){
+
+        }
+
+        var processBlockEvents = function(){
+            // check if block is current
+
+            // or check if block previous
+
+            //
+        }
+
+        var registerBlock = function(element){
+            _this.data.blocks.push(new blockEntity(element));
+        }
+
+        var blockEntity = function(element){
+            this.html = element;
+            this.current = false;
+            this.style = this.html.style;
+            return this;
+        }
+
+        var _initialize = function(args, callback){
+            $.extend(_this.data, args);
+
+            var blck_lngth = $(_this.data.block_selector).length;
+            if(blck_lngth > 0)  {
+                _this.data.currentblock = 1;
+                for(var i = 0; i < blck_lngth; i++){
+                    registerBlock($(_this.data.block_selector)[i]);
+                }
+            }
+
+            if(_this.data.currentblock > 0 && _this.data.currentblock < (_this.data.blocks.length + 1)) {
+                _this.goTo(_this.data.currentblock, callback)
+            }
+        }
+        this.constructor = _initialize(args, callback);
+
+        return this;
+    }        
+
+    var blockMgr = $("#formarea").blockmanager({ /* currentblock: 1,*/ block_selector: ".blokje" }, function(object){
+
+        // $(object.data.blocks).each(function(index, element){
+            
+        // });
+
+        // $(".blokje input[type=radio]").on("change", function(event){
+        //     var $currentBlock = $(event.currentTarget).parent();
+        //     console.log($currentBlock);
+        // })
+    });
+
+    $(blockMgr).bind("next", function(){
+        
+    }).bind("previous", function(){
+        
+    })
+
+    </script>
+
+
+</body>
+</html>
