@@ -10,126 +10,74 @@
             block_selector: ".block",
             block_container: ".block_container",
             currentblock : 0,
-            overlay:{}
+            overlay: {},
+            block_entity_positions: { previous : -1, current: 0, queue: 1 }
         };
 
         _this.next = function(callback) {
             if(_this.data.currentblock < (_this.data.blocks.length)) {
-                _this.goTo((_this.data.currentblock + 1), callback);
+                goTo((_this.data.currentblock + 1), callback);
                 _this.trigger("next");
             }
         }
 
         _this.previous = function(callback) {
             if(_this.data.currentblock > 1){
-                _this.goTo((_this.data.currentblock - 1), callback);
+                goTo((_this.data.currentblock - 1), callback);
                 _this.trigger("previous");
             }
         }
 
-        _this.goTo = function(n, callback) {
-            console.log("goto", n);
-            _this.data.currentblock = n;
-
+        // INVISIBLE.
+        var goTo = function(n, callback) {
+            // UPDATING BLOCK ENTITY VARIABLES.
             updateBlockData(n);
 
-            if(n == 1) {
-                $(_this.data.block_container).css("top", "100px");
-            }
-            else {
-                if(n == 2)
-                    $(_this.data.block_container).css("top", "-20px");
-                else {
-                    var nextPixel = (Math.abs((n-2)*120) * -1) - 20;
-                    $(_this.data.block_container).css("top", (nextPixel +"px"));
-                }
-            }
+            // MOVING CONTAINER ACCORDING STYLES.
+            moveContainer(n);
 
+            // CALL EXISTS => EXECUTE.
             if(callback)
                 callback(_this);
         } 
 
-        var updateBlockData = function(n){
+        var updateBlockData = function (n) {
+            _this.data.currentblock = n;
+
             var previousIndex, currentIndex;
             currentIndex = (n - 1);
             previousIndex = currentIndex == 0 ? -1 : currentIndex - 1
 
             // Loop through blocks
             for(var i = 0; i < (_this.data.blocks.length); i++){
-                if(i == currentIndex){
-                    _this.data.blocks[i].current = false;
-                    processCSSPosition("current", $(_this.data.blocks[i].html));
+                if (i == currentIndex) {
+                    _this.data.blocks[i].updateBlockPosition(_this.data.block_entity_positions.current);
                 }
-                else if(i == previousIndex){
-                    _this.data.blocks[i].current = true;
-                    processCSSPosition("previous", $(_this.data.blocks[i].html));
+                else if (i <= previousIndex) {
+                    _this.data.blocks[i].updateBlockPosition(_this.data.block_entity_positions.previous);
                 }
-                else if(i > currentIndex){
-                    _this.data.blocks[i].current = false;
-                    processCSSPosition("queue", $(_this.data.blocks[i].html));
+                else if (i > currentIndex) {
+                    _this.data.blocks[i].updateBlockPosition(_this.data.block_entity_positions.queue);
                 }
-                else{
-                    _this.data.blocks[i].current = false;
-                    processCSSPosition("default", $(_this.data.blocks[i].html));
+                else {
+                    _this.data.blocks[i].updateBlockPosition(-2);
                 }
             }
         }
 
-        var processCSSPosition = function(status, $element){
-            switch(status)
-            {
-                case "previous" : {
-                    $element.addClass("previous");
-
-                    if($element.hasClass("current"))
-                        $element.removeClass("current");
-
-                    if($element.hasClass("queue"))
-                        $element.removeClass("queue");
-
-                    break;
-                }
-
-                case "current" : {
-                    $element.addClass("current");
-
-                    if($element.hasClass("previous"))
-                        $element.removeClass("previous");
-
-                    if($element.hasClass("queue"))
-                        $element.removeClass("queue");
-
-                    break;
-                }
-
-                case "queue" : {
-                    $element.addClass("queue");
-
-                    if($element.hasClass("previous"))
-                        $element.removeClass("previous");
-
-                    if($element.hasClass("current"))
-                        $element.removeClass("current");
-
-                    break;
-                }
-                default:{
-                    if($element.hasClass("queue"))
-                        $element.removeClass("queue");
-
-                    if($element.hasClass("previous"))
-                        $element.removeClass("previous");
-
-                    if($element.hasClass("current"))
-                        $element.removeClass("current");
-
-                    break;
+        // MOVE CONTAINER.
+        var moveContainer = function(n){
+            if (n == 1) {
+                $(_this.data.block_container).css("top", "100px");
+            }
+            else {
+                if (n == 2)
+                    $(_this.data.block_container).css("top", "-20px");
+                else {
+                    var nextPixel = (Math.abs((n - 2) * 120) * -1) - 20;
+                    $(_this.data.block_container).css("top", (nextPixel + "px"));
                 }
             }
-        }
-
-        var moveContainer = function(){
-
         }
 
         var processBlockEvents = function(){
@@ -151,9 +99,32 @@
             return this;
         }
 
+        /* UPDATE BLOCK ENTITY */
+        blockEntity.prototype.updateBlockPosition = function (pos) {
+            switch (pos) {
+                case -1: {
+                    this.current = false;
+                    $(this.html).addClass("previous").removeClass("current").removeClass("queue"); break;
+                }
+                case 0: {
+                    this.current = true;
+                    $(this.html).addClass("current").removeClass("previous").removeClass("queue"); break;
+                }
+                case 1: {
+                    this.current = false;
+                    $(this.html).addClass("queue").removeClass("previous").removeClass("current"); break;
+                }
+                default: {
+                    this.current = false;
+                    $(this.html).removeClass("queue").removeClass("previous").removeClass("current"); break;
+                }
+            }
+        }
+
         var _initialize = function(args, callback){
             $.extend(_this.data, args);
 
+            // REGISTERING BLOCKS.
             var blck_lngth = $(_this.data.block_selector).length;
             if(blck_lngth > 0)  {
                 _this.data.currentblock = 1;
@@ -162,8 +133,9 @@
                 }
             }
 
+            // PROVIDED CURRENT BLOCK BY USER COULD NOT BE WITHIN RANGE.
             if(_this.data.currentblock > 0 && _this.data.currentblock < (_this.data.blocks.length + 1)) {
-                _this.goTo(_this.data.currentblock, callback)
+                goTo(_this.data.currentblock, callback)
             }
         }
         this.constructor = _initialize(args, callback);
